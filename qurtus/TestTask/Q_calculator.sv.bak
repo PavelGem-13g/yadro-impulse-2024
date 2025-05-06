@@ -1,0 +1,67 @@
+module Q_calculator #(
+    parameter WIDTH = 16
+)(
+    input  logic clk,
+    input  logic rst,
+    input  logic valid_in,
+    input  logic signed [WIDTH-1:0] a, b, c, d,
+    output logic signed [WIDTH-1:0] Q,
+    output logic valid_out
+);
+
+    // Промежуточные регистры
+    logic signed [WIDTH-1:0] ab_diff, three_c, one_plus_3c;
+    logic signed [2*WIDTH-1:0] mul_result, four_d, sub_result;
+    logic signed [2*WIDTH-1:0] final_result;
+
+    // Valid регистр
+    logic valid_reg1, valid_reg2;
+
+    // Этап 1: одновременные операции
+    always_ff @(posedge clk or posedge rst) begin
+        if (rst) begin
+            ab_diff     <= '0;
+            three_c     <= '0;
+            four_d      <= '0;
+            valid_reg1  <= 0;
+        end else if (valid_in) begin
+            ab_diff     <= a - b;
+            three_c     <= 3 * c;
+            four_d      <= 4 * d;
+            valid_reg1  <= 1;
+        end else begin
+            valid_reg1 <= 0;
+        end
+    end
+
+    // Этап 2: умножение и вычитание
+    always_ff @(posedge clk or posedge rst) begin
+        if (rst) begin
+            mul_result    <= '0;
+            sub_result    <= '0;
+            valid_reg2    <= 0;
+        end else if (valid_reg1) begin
+            one_plus_3c   <= three_c + 1;
+            mul_result    <= ab_diff * (three_c + 1);
+            sub_result    <= (ab_diff * (three_c + 1)) - four_d;
+            valid_reg2    <= 1;
+        end else begin
+            valid_reg2 <= 0;
+        end
+    end
+
+    // Этап 3: деление на 2
+    always_ff @(posedge clk or posedge rst) begin
+        if (rst) begin
+            Q         <= '0;
+            valid_out <= 0;
+        end else if (valid_reg2) begin
+            final_result = sub_result >>> 1; // арифметическое деление на 2
+            Q         <= final_result[WIDTH-1:0]; // отсечь до нужной разрядности
+            valid_out <= 1;
+        end else begin
+            valid_out <= 0;
+        end
+    end
+
+endmodule
