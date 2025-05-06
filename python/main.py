@@ -1,11 +1,9 @@
 import random
 import pandas as pd
 
-# Определение функции на Python, которая рассчитывает значение Q
 def compute_Q(a: int, b: int, c: int, d: int) -> int:
     return ((a - b) * (1 + 3 * c) - 4 * d) // 2
 
-# Генерация 20 случайных тестов с входами в диапазоне от -100 до 100
 test_vectors = []
 for _ in range(20):
     a = random.randint(-100, 100)
